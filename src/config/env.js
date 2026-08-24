@@ -37,5 +37,5 @@ export const env = {
   maxUploadMb: Number(process.env.MAX_UPLOAD_MB) || 5,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  apiUrl: process.env.API_URL || "http://localhost:5000",
+  apiUrl: process.env.API_URL || "https://linkify-backend-mlao.onrender.com",
 };
