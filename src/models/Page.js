@@ -24,6 +24,7 @@ const themeSchema = new mongoose.Schema(
     font: { type: String, default: "Inter" },
     colors: {
       text: { type: String, default: "#2F2A26" },
+      title: { type: String, default: "" },
       button: { type: String, default: "#E8734A" },
       buttonText: { type: String, default: "#FFFFFF" },
     },
