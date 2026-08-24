@@ -11,13 +11,12 @@ const router = Router();
 
 router.get("/settings", getAuthSettings);
 
-router.get("/google", (req, res) => {
-  res.json({
-    message: "Google route is working",
-    apiUrl: process.env.API_URL,
-    callbackUrl: `${process.env.API_URL}/api/auth/google/callback`,
-  });
-});
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  })
+);
 router.get("/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), googleCallback);
 
 router.post("/register", authLimiter, validate(registerSchema), register);
