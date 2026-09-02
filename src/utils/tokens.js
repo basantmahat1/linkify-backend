@@ -15,24 +15,30 @@ export function verifyRefreshToken(token) {
 }
 
 export function setAuthCookies(res, { accessToken, refreshToken }) {
-  const isProd = process.env.NODE_ENV === "production";
-  // Production: secure + sameSite=none required for cross-origin cookies (Vercel ↔ Render)
-  // Development: insecure + sameSite=lax for HTTP localhost
+  const isCrossSite =
+    process.env.NODE_ENV === "production" ||
+    (env.clientUrl && !env.clientUrl.includes("localhost") && !env.clientUrl.includes("127.0.0.1"));
+
+  // Production/Cross-site: secure=true + sameSite=none required for Vercel ↔ Render cookies
+  // Development/Localhost: secure=false + sameSite=lax for HTTP localhost
   const base = { 
     httpOnly: true, 
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure: isCrossSite,
+    sameSite: isCrossSite ? "none" : "lax",
     path: "/"
   };
   res.cookie("accessToken", accessToken, { ...base, maxAge: 15 * 60 * 1000 });
   res.cookie("refreshToken", refreshToken, { ...base, maxAge: 7 * 24 * 60 * 60 * 1000 });
 }
 export function clearAuthCookies(res) {
-  const isProd = process.env.NODE_ENV === "production";
+  const isCrossSite =
+    process.env.NODE_ENV === "production" ||
+    (env.clientUrl && !env.clientUrl.includes("localhost") && !env.clientUrl.includes("127.0.0.1"));
+
   const base = {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure: isCrossSite,
+    sameSite: isCrossSite ? "none" : "lax",
     path: "/",
   };
   res.clearCookie("accessToken", base);
