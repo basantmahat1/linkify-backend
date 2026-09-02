@@ -9,9 +9,27 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { visibleNowFilter } from "../utils/schedule.js";
 import { normalizeThemePatch } from "../validators/page.validator.js";
 
+import User from "../models/User.js";
+import { nanoid } from "nanoid";
+
 export const getMyPage = asyncHandler(async (req, res) => {
-  const page = await Page.findOne({ owner: req.user._id }).populate({ path: "themeId", select: "name slug category publishedConfig" });
-  if (!page) throw new ApiError(404, "Page not found");
+  let page = await Page.findOne({ owner: req.user._id }).populate({ path: "themeId", select: "name slug category publishedConfig" });
+  if (!page) {
+    const user = await User.findById(req.user._id);
+    let baseUsername = user?.email?.split("@")[0].toLowerCase().replace(/[^a-z0-9_.-]/g, "") || `user-${nanoid(6)}`;
+    if (baseUsername.length < 3) baseUsername = `user-${nanoid(6)}`;
+    let username = baseUsername;
+    let i = 0;
+    while (await Page.findOne({ username })) {
+      i += 1;
+      username = `${baseUsername}${i}`;
+    }
+    page = await Page.create({
+      owner: req.user._id,
+      username,
+      displayName: user?.name || "User",
+    });
+  }
   return ApiResponse(res, 200, page);
 });
 

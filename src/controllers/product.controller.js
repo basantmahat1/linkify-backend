@@ -6,10 +6,27 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { planLimits } from "../config/plans.js";
 import { isScheduleActive } from "../utils/schedule.js";
+import User from "../models/User.js";
+import { nanoid } from "nanoid";
 
 async function getOwnedPage(userId) {
-  const page = await Page.findOne({ owner: userId });
-  if (!page) throw new ApiError(404, "Page not found");
+  let page = await Page.findOne({ owner: userId });
+  if (!page) {
+    const user = await User.findById(userId);
+    let baseUsername = user?.email?.split("@")[0].toLowerCase().replace(/[^a-z0-9_.-]/g, "") || `user-${nanoid(6)}`;
+    if (baseUsername.length < 3) baseUsername = `user-${nanoid(6)}`;
+    let username = baseUsername;
+    let i = 0;
+    while (await Page.findOne({ username })) {
+      i += 1;
+      username = `${baseUsername}${i}`;
+    }
+    page = await Page.create({
+      owner: userId,
+      username,
+      displayName: user?.name || "User",
+    });
+  }
   return page;
 }
 
