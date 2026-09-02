@@ -104,6 +104,4 @@ const pageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-pageSchema.index({ username: 1 }, { unique: true });
-
 export default mongoose.model("Page", pageSchema);
