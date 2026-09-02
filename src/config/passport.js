@@ -5,13 +5,17 @@ import Page from "../models/Page.js";
 import { nanoid } from "nanoid";
 import { env } from "./env.js";
 
-passport.use(
-  new GoogleStrategy(
-  {
-    clientID: env.googleClientId,
-    clientSecret: env.googleClientSecret,
-    callbackURL: `${env.apiUrl}/api/auth/google/callback`,
-  },
+const baseApiUrl = (env.apiUrl || "http://localhost:5000").replace(/\/+$/, "").replace(/\/api$/, "");
+
+if (env.googleClientId && env.googleClientSecret) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: env.googleClientId,
+        clientSecret: env.googleClientSecret,
+        callbackURL: `${baseApiUrl}/api/auth/google/callback`,
+        proxy: true,
+      },
     async (accessToken, refreshToken, profile, done) => {
       console.log("Google Strategy Profile:", profile);
       try {
@@ -52,6 +56,7 @@ passport.use(
     }
   )
 );
+}
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
