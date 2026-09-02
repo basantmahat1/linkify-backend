@@ -30,8 +30,16 @@ export const env = {
     refreshExpires: process.env.JWT_REFRESH_EXPIRES || "7d",
   },
   brevo: {
-    senderEmail: process.env.BREVO_SENDER_EMAIL || "noreply@linkify.com",
+    apiKey: process.env.BREVO_API_KEY,
+    senderEmail: process.env.BREVO_SENDER_EMAIL || "mahatbasant414@gmail.com",
     senderName: process.env.BREVO_SENDER_NAME || "Linkify",
+  },
+  smtp: {
+    host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === "true",
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
   cookieDomain: process.env.COOKIE_DOMAIN || "localhost",
   maxUploadMb: Number(process.env.MAX_UPLOAD_MB) || 5,
