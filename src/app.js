@@ -66,7 +66,7 @@ app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
 app.use("/api", apiLimiter);
 app.use(
   "/uploads",
-  express.static(path.join(process.cwd(), "backend/uploads"), {
+  express.static(path.join(process.cwd(), "uploads"), {
     setHeaders: (res) => {
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");

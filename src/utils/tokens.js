@@ -15,12 +15,13 @@ export function verifyRefreshToken(token) {
 }
 
 export function setAuthCookies(res, { accessToken, refreshToken }) {
-  // Always set secure: false for development to ensure cookies are set on HTTP localhost
   const isProd = process.env.NODE_ENV === "production";
+  // Production: secure + sameSite=none required for cross-origin cookies (Vercel ↔ Render)
+  // Development: insecure + sameSite=lax for HTTP localhost
   const base = { 
     httpOnly: true, 
-    secure: isProd, // Should be false in development
-    sameSite: "lax", // Lax is usually sufficient for localhost
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/"
   };
   res.cookie("accessToken", accessToken, { ...base, maxAge: 15 * 60 * 1000 });
@@ -31,7 +32,7 @@ export function clearAuthCookies(res) {
   const base = {
     httpOnly: true,
     secure: isProd,
-    sameSite: "lax",
+    sameSite: isProd ? "none" : "lax",
     path: "/",
   };
   res.clearCookie("accessToken", base);

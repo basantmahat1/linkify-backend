@@ -6,6 +6,7 @@ import { validate } from "../middleware/validate.middleware.js";
 import { registerSchema, loginSchema, verifyOtpSchema, resendOtpSchema } from "../validators/auth.validator.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { authLimiter, otpVerifyLimiter, otpResendLimiter } from "../middleware/rateLimit.middleware.js";
+import { env } from "../config/env.js";
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.get(
     scope: ["profile", "email"],
   })
 );
-router.get("/google/callback", passport.authenticate("google", { failureRedirect: "/login" }), googleCallback);
+router.get("/google/callback", passport.authenticate("google", { failureRedirect: `${env.clientUrl}/login` }), googleCallback);
 
 router.post("/register", authLimiter, validate(registerSchema), register);
 router.post("/login", authLimiter, validate(loginSchema), login);
