@@ -4,12 +4,15 @@ import AuthSetting from "../models/AuthSetting.js";
 
 // Configure Nodemailer transporter (Brevo SMTP)
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
+  host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
   port: Number(process.env.SMTP_PORT) || 587,
   secure: process.env.SMTP_SECURE === "true",
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false,
   },
 });
 
@@ -141,7 +144,12 @@ export async function sendOtpEmail(to, name, otp) {
     
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("[email.service] Failed to send OTP email:", error);
+    console.error("[email.service] Failed to send OTP email:", {
+      to,
+      message: error.message,
+      code: error.code,
+      response: error.response,
+    });
     throw new Error("Failed to send verification email. Please try again.");
   }
 }
