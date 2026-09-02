@@ -33,16 +33,29 @@ const app = express();
 
 app.set("trust proxy", 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-const allowedOrigins = [env.clientUrl, "http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"].filter(Boolean);
+const clientOrigin = env.clientUrl ? env.clientUrl.replace(/\/+$/, "") : "";
+const allowedOrigins = [
+  clientOrigin,
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or same-origin)
-      if (!origin || allowedOrigins.includes(origin) || env.nodeEnv === "development") {
+      if (!origin) return callback(null, true);
+      const normalizedOrigin = origin.replace(/\/+$/, "");
+      if (
+        allowedOrigins.includes(normalizedOrigin) ||
+        normalizedOrigin.endsWith(".vercel.app") ||
+        env.nodeEnv === "development"
+      ) {
         callback(null, true);
       } else {
-        callback(new Error("Blocked by CORS policy"));
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        callback(new Error(`Blocked by CORS policy: ${origin}`));
       }
     },
     credentials: true,
