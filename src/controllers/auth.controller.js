@@ -140,9 +140,14 @@ export const me = asyncHandler(async (req, res) => {
 });
 
 export const googleCallback = asyncHandler(async (req, res) => {
+  const clientUrl = (env.clientUrl || "http://localhost:5173").replace(/\/+$/, "");
+  if (!req.user) {
+    console.error("[OAuth] No user attached to req in googleCallback!");
+    return res.redirect(`${clientUrl}/login?error=google_user_missing`);
+  }
   console.log("Google callback received, issuing tokens for user:", req.user._id);
   issueTokens(res, req.user);
-  const redirectUrl = `${env.clientUrl}/dashboard`;
+  const redirectUrl = `${clientUrl}/dashboard`;
   console.log("Redirecting to:", redirectUrl);
   res.redirect(redirectUrl);
 });

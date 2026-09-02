@@ -12,13 +12,28 @@ const router = Router();
 
 router.get("/settings", getAuthSettings);
 
-router.get(
-  "/google",
+router.get("/google", (req, res, next) => {
+  if (!env.googleClientId || !env.googleClientSecret) {
+    const clientUrl = (env.clientUrl || "http://localhost:5173").replace(/\/+$/, "");
+    console.error("[OAuth] GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing in environment!");
+    return res.redirect(`${clientUrl}/login?error=google_not_configured`);
+  }
   passport.authenticate("google", {
     scope: ["profile", "email"],
-  })
+    prompt: "select_account",
+  })(req, res, next);
+});
+
+router.get(
+  "/google/callback",
+  (req, res, next) => {
+    const clientUrl = (env.clientUrl || "http://localhost:5173").replace(/\/+$/, "");
+    passport.authenticate("google", {
+      failureRedirect: `${clientUrl}/login?error=google_callback_failed`,
+    })(req, res, next);
+  },
+  googleCallback
 );
-router.get("/google/callback", passport.authenticate("google", { failureRedirect: `${env.clientUrl}/login` }), googleCallback);
 
 router.post("/register", authLimiter, validate(registerSchema), register);
 router.post("/login", authLimiter, validate(loginSchema), login);
