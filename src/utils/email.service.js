@@ -127,29 +127,74 @@ function buildOtpHtml(name, otp, logoUrl = "") {
 }
 
 /**
- * Send OTP verification email via Nodemailer
+ * Send OTP verification email
+ * 1. Tries Brevo HTTPS REST API first (bypasses Render's port 587 SMTP block)
+ * 2. Falls back to Nodemailer SMTP if needed
  */
 export async function sendOtpEmail(to, name, otp) {
+  // Fetch the email logo URL from DB (set by admin)
+  let logoUrl = "";
   try {
-    // Fetch the email logo URL from DB (set by admin)
     const settings = await AuthSetting.findOne().lean();
-    const logoUrl = settings?.emailLogo || "";
+    logoUrl = settings?.emailLogo || "";
+  } catch (e) {
+    // Ignore DB error for logo
+  }
 
+  const senderEmail = env.brevo?.senderEmail || process.env.BREVO_SENDER_EMAIL || "mahatbasant414@gmail.com";
+  const senderName = env.brevo?.senderName || process.env.BREVO_SENDER_NAME || "Linkify";
+  const htmlContent = buildOtpHtml(name, otp, logoUrl);
+  const subject = `${otp} is your Linkify verification code`;
+
+  const brevoApiKey = process.env.BREVO_API_KEY || process.env.SMTP_PASS;
+
+  // 1. Try Brevo HTTPS REST API (Port 443 - 100% reliable on Render)
+  if (brevoApiKey) {
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "api-key": brevoApiKey,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: to, name: name || "User" }],
+          subject: subject,
+          htmlContent: htmlContent,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.log(`[email.service] OTP email sent successfully via Brevo HTTPS API to ${to}`);
+        return { success: true, messageId: data.messageId };
+      } else {
+        const errBody = await res.text().catch(() => "");
+        console.warn(`[email.service] Brevo REST API returned ${res.status}: ${errBody}`);
+      }
+    } catch (apiErr) {
+      console.warn("[email.service] Brevo HTTPS REST API failed, trying SMTP fallback...", apiErr.message);
+    }
+  }
+
+  // 2. Fallback to Nodemailer SMTP
+  try {
     const info = await transporter.sendMail({
-      from: `"${env.brevo.senderName}" <${env.brevo.senderEmail}>`,
+      from: `"${senderName}" <${senderEmail}>`,
       to: to,
-      subject: `${otp} is your Linkify verification code`,
-      html: buildOtpHtml(name, otp, logoUrl),
+      subject: subject,
+      html: htmlContent,
     });
-    
+    console.log(`[email.service] OTP email sent successfully via SMTP to ${to}`);
     return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error("[email.service] Failed to send OTP email:", {
+  } catch (smtpError) {
+    console.error("[email.service] All email delivery methods failed:", {
       to,
-      message: error.message,
-      code: error.code,
-      response: error.response,
+      message: smtpError.message,
+      code: smtpError.code,
     });
-    throw new Error("Failed to send verification email. Please try again.");
+    throw new Error("Failed to send verification email. Please check your email configuration.");
   }
 }
