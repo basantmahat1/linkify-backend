@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+uploads/*
+!uploads/.gitkeep
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
+.idea/
+.vscode/
+*.swp
+*.swo
+dist/
